@@ -6,126 +6,152 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a NiFi-based CDC (Change Data Capture) core implementation project. The initial focus is on Oracle-to-Oracle database CDC, with plans to expand to multiple databases (PostgreSQL, etc.) and data sources (local, FTP, S3, Kafka, RabbitMQ, Redis, etc.).
 
+**Important**: This project uses Apache NiFi 1.28 deployed externally. We leverage the NiFi API to programmatically create and manage processors rather than deploying custom NAR files.
+
 ## Development Setup
 
 ### Prerequisites
-- Apache NiFi (1.x or 2.x)
-- Java 8+ (for NiFi compatibility)
-- Oracle JDBC drivers
-- Maven or Gradle for dependency management
+- Apache NiFi 1.28 (deployed externally)
+- Java 8+ (for NiFi 1.28 compatibility)
+- Access to NiFi REST API endpoints
+- Technology stack to be determined during implementation
 
 ### Common Commands
 
 #### Build Commands
 ```bash
-# Maven build
-mvn clean install
-mvn package
-
-# Gradle build (if using Gradle)
-./gradlew clean build
+# Build commands will be determined based on chosen technology stack
+# Examples:
+# Java/Maven: mvn clean install
+# Python: pip install -r requirements.txt
+# Node.js: npm install
 ```
 
-#### Testing
+#### NiFi API Interaction
 ```bash
-# Run unit tests
-mvn test
-./gradlew test
+# Get NiFi cluster status
+curl -X GET http://nifi-host:8080/nifi-api/flow/cluster/summary
 
-# Run integration tests
-mvn verify
-./gradlew integrationTest
-```
+# List all process groups
+curl -X GET http://nifi-host:8080/nifi-api/process-groups/root/process-groups
 
-#### NiFi Processor Development
-```bash
-# Deploy custom processor to NiFi
-cp target/*.nar $NIFI_HOME/lib/
-# Restart NiFi to load new processors
+# Create a new processor
+curl -X POST http://nifi-host:8080/nifi-api/process-groups/{id}/processors \
+  -H 'Content-Type: application/json' \
+  -d '{"revision":{"version":0},"component":{"type":"org.apache.nifi.processors.standard.GetFile","name":"GetFile"}}'
 ```
 
 ## Architecture Guidelines
 
 ### Core Components Structure
 
-1. **Processors Package** (`com.nificdc.processors`)
-   - Custom NiFi processors for CDC operations
-   - Each database type should have its own processor class
-   - Follow NiFi processor lifecycle methods
+Since we're using NiFi API instead of custom processors, the architecture will focus on:
 
-2. **Services Package** (`com.nificdc.services`)
-   - Database connection management
-   - CDC logic implementation
-   - Transaction log readers
+1. **API Client Module**
+   - NiFi REST API client implementation
+   - Authentication and session management
+   - Process group and processor management
+   - Flow configuration and monitoring
 
-3. **Models Package** (`com.nificdc.models`)
-   - Data transfer objects
-   - CDC event models
-   - Configuration models
+2. **CDC Configuration Module**
+   - Database connection configurations
+   - CDC strategy configurations per database type
+   - Processor template definitions
+   - Flow design patterns for CDC
 
-4. **Utils Package** (`com.nificdc.utils`)
-   - Common utilities
-   - Database-specific helpers
-   - Data transformation utilities
+3. **Flow Management Module**
+   - Automated flow creation for CDC pipelines
+   - Process group templates for different CDC scenarios
+   - Connection and relationship management
+   - Error handling and retry configurations
+
+4. **Monitoring Module**
+   - Flow performance monitoring via NiFi API
+   - CDC lag monitoring
+   - Error tracking and alerting
+   - Health check implementations
 
 ### Key Design Patterns
 
-1. **NiFi Processor Pattern**
-   - Extend `AbstractProcessor`
-   - Implement `onTrigger()` for main logic
-   - Use PropertyDescriptors for configuration
-   - Handle FlowFile processing properly
+1. **NiFi API Integration Pattern**
+   - Use REST API for all NiFi interactions
+   - Implement proper authentication (certificates/tokens)
+   - Handle API versioning for NiFi 1.28
+   - Implement retry logic for API calls
 
-2. **Database Abstraction**
-   - Create interfaces for database operations
-   - Implement database-specific classes
-   - Use factory pattern for database connections
+2. **CDC Flow Templates**
+   - Create reusable process group templates
+   - Use NiFi's built-in processors where possible:
+     - ExecuteSQL/QueryDatabaseTable for polling
+     - ConsumeKafka/PublishKafka for streaming
+     - PutDatabaseRecord for target updates
+   - Implement custom logic via ExecuteScript processors when needed
 
 3. **CDC Implementation Strategy**
-   - For Oracle: Use LogMiner or GoldenGate APIs
-   - For PostgreSQL: Use logical replication
-   - Implement polling or streaming based on source
+   - For Oracle: Configure CaptureChangeMySQL or ExecuteSQL with CDC queries
+   - For PostgreSQL: Use logical replication with ConsumeKafka
+   - Leverage NiFi's Record processors for data transformation
 
 ### Configuration Management
 
-- Use NiFi's Controller Services for connection pooling
-- Store sensitive credentials in NiFi's sensitive properties
-- Use PropertyDescriptors for processor configuration
+- Configure NiFi Controller Services via API for connection pooling
+- Use NiFi Variables and Parameter Contexts for environment-specific configs
+- Store sensitive credentials in NiFi's Parameter Contexts with sensitivity flag
+- Implement configuration versioning and backup
 
 ### Error Handling
 
-- Implement proper rollback mechanisms
-- Route failed FlowFiles to failure relationships
-- Log detailed error information for debugging
-- Implement retry logic with exponential backoff
+- Configure processor retry settings via API
+- Set up failure routing in processor relationships
+- Implement dead letter queues using RouteOnAttribute
+- Monitor bulletin board for processor errors via API
 
 ### Performance Considerations
 
-- Batch processing for better throughput
-- Connection pooling for database connections
-- Implement checkpoint mechanisms for recovery
-- Monitor memory usage in processors
+- Configure concurrent tasks for processors via API
+- Set appropriate back pressure thresholds
+- Use NiFi clustering features for scalability
+- Monitor queue sizes and processing rates via API
 
 ## Testing Guidelines
 
-1. Unit test all processors with MockProcessContext
-2. Integration tests with embedded databases when possible
-3. Test error scenarios and edge cases
-4. Performance testing with large data volumes
+1. Test NiFi API client with mock responses
+2. Create test flows in development NiFi instance
+3. Implement flow validation before deployment
+4. Load testing with production-like data volumes
 
 ## Future Expansion Notes
 
 When adding new data sources:
-1. Create new processor in appropriate package
-2. Implement source-specific reader/writer
-3. Add configuration properties
-4. Update documentation
-5. Add comprehensive tests
+1. Design new process group template for the data source
+2. Identify required NiFi processors (built-in or ExecuteScript)
+3. Create API client methods for flow deployment
+4. Add source-specific configuration templates
+5. Implement monitoring for the new source type
+6. Document the flow design and configuration
+
+## NiFi API Resources
+
+### Key API Endpoints for NiFi 1.28
+- `/nifi-api/flow` - Flow information
+- `/nifi-api/process-groups` - Process group management
+- `/nifi-api/processors` - Processor operations
+- `/nifi-api/controller-services` - Controller service management
+- `/nifi-api/parameter-contexts` - Parameter context operations
+- `/nifi-api/flow/bulletin-board` - Error and status bulletins
+
+### Technology Stack Considerations
+
+As the technology stack is determined during implementation, consider:
+- **Java**: Natural fit for NiFi integration, good API client libraries
+- **Python**: Good for rapid prototyping, requests library for REST API
+- **Node.js**: Async nature suits API interactions, good for real-time monitoring
+- **Go**: High performance, good for concurrent API operations
 
 ## Git Workflow
 
 Always create meaningful commits that reflect the CDC implementation progress:
 ```bash
 git add .
-git commit -m "feat: Add Oracle CDC processor with LogMiner support"
+git commit -m "feat: Add Oracle CDC flow template via NiFi API"
 ```
