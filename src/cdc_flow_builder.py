@@ -116,12 +116,15 @@ class CDCFlowBuilder:
             {"x": 100, "y": 100}
         )["component"]
         
-        # 2. ConvertAvroToJSON processor
+        # 2. ConvertRecord processor (more generic, works with Avro)
         processors["convert"] = self.nifi_client.create_processor(
             process_group_id,
-            "org.apache.nifi.processors.kite.ConvertAvroToJSON",
+            "org.apache.nifi.processors.standard.ConvertRecord",
             "Convert to JSON",
-            {},
+            {
+                "Record Reader": "AvroReader",
+                "Record Writer": "JsonRecordSetWriter"
+            },
             {"x": 400, "y": 100}
         )["component"]
         
