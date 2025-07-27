@@ -16,6 +16,11 @@ This is a NiFi-based CDC (Change Data Capture) core implementation project. The 
 - Access to NiFi REST API endpoints
 - Technology stack to be determined during implementation
 
+### Environment Setup
+1. Copy `.env.example` to `.env`
+2. Fill in the required connection information
+3. Ensure NiFi API is accessible from your development environment
+
 ### Common Commands
 
 #### Build Commands

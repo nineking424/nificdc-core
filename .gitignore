@@ -1,0 +1,67 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+vendor/
+target/
+build/
+dist/
+*.jar
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+env/
+.venv
+
+# Java
+*.class
+.gradle/
+.settings/
+.project
+.classpath
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+.cache/
+
+# Security
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+
+# Test coverage
+coverage/
+.coverage
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Documentation build
+docs/_build/
+site/
