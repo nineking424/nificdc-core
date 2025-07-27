@@ -1,0 +1,57 @@
+{
+  "process_group_response": {
+    "revision": {"version": 1},
+    "component": {
+      "id": "test-pg-123",
+      "name": "Test Process Group",
+      "position": {"x": 0, "y": 0},
+      "state": "RUNNING"
+    }
+  },
+  "processor_response": {
+    "revision": {"version": 1},
+    "component": {
+      "id": "test-proc-456",
+      "name": "Test Processor",
+      "type": "org.apache.nifi.processors.standard.ExecuteSQL",
+      "state": "STOPPED",
+      "config": {
+        "properties": {
+          "Database Connection Pooling Service": "test-dbcp-789"
+        }
+      }
+    }
+  },
+  "controller_service_response": {
+    "revision": {"version": 1},
+    "component": {
+      "id": "test-dbcp-789",
+      "name": "Test DBCP",
+      "type": "org.apache.nifi.dbcp.DBCPConnectionPool",
+      "state": "DISABLED",
+      "properties": {
+        "Database Connection URL": "jdbc:oracle:thin:@test-host:1521:TESTDB"
+      }
+    }
+  },
+  "connection_response": {
+    "revision": {"version": 1},
+    "component": {
+      "id": "test-conn-111",
+      "source": {
+        "id": "test-proc-456",
+        "groupId": "test-pg-123",
+        "type": "PROCESSOR"
+      },
+      "destination": {
+        "id": "test-proc-457",
+        "groupId": "test-pg-123",
+        "type": "PROCESSOR"
+      },
+      "selectedRelationships": ["success"]
+    }
+  },
+  "authentication_response": {
+    "token": "test-jwt-token-xyz"
+  }
+}

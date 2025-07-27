@@ -120,6 +120,91 @@ Since we're using NiFi API instead of custom processors, the architecture will f
 
 ## Testing Guidelines
 
+### Test-Driven Development (TDD) Approach
+
+**IMPORTANT**: This project follows Test-Driven Development principles. Always write tests before implementing features.
+
+#### TDD Workflow
+1. **Red**: Write a failing test that defines the desired functionality
+2. **Green**: Write the minimum code necessary to make the test pass
+3. **Refactor**: Improve the code while keeping tests green
+
+#### Test Structure
+```
+tests/
+├── unit/
+│   ├── test_nifi_api_client.py
+│   ├── test_config_parser.py
+│   └── test_cdc_flow_builder.py
+├── integration/
+│   ├── test_nifi_integration.py
+│   └── test_database_connectivity.py
+└── fixtures/
+    ├── sample_configs/
+    └── mock_responses/
+```
+
+#### Testing Best Practices
+1. **Unit Tests**
+   - Mock all external dependencies (NiFi API, databases)
+   - Test edge cases and error scenarios
+   - Aim for >80% code coverage
+   - Use descriptive test names: `test_should_create_processor_when_valid_config()`
+
+2. **Integration Tests**
+   - Use test NiFi instance with known state
+   - Test actual API calls with timeout handling
+   - Verify end-to-end CDC flow creation
+   - Clean up test artifacts after each run
+
+3. **Test Examples**
+```python
+# Example: Testing NiFi API client
+def test_should_create_process_group_with_valid_params():
+    # Arrange
+    client = NiFiAPIClient("http://test-nifi:8080/nifi-api")
+    expected_name = "Test CDC Group"
+    
+    # Act
+    result = client.create_process_group("root", expected_name)
+    
+    # Assert
+    assert result["component"]["name"] == expected_name
+    assert "id" in result["component"]
+
+# Example: Testing error handling
+def test_should_raise_exception_when_nifi_unavailable():
+    # Arrange
+    client = NiFiAPIClient("http://invalid-host/nifi-api")
+    
+    # Act & Assert
+    with pytest.raises(ConnectionError):
+        client.create_process_group("root", "Test")
+```
+
+#### Running Tests
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=src --cov-report=html
+
+# Run specific test file
+pytest tests/unit/test_nifi_api_client.py
+
+# Run tests in watch mode (TDD)
+pytest-watch
+```
+
+#### Mock Strategy
+- Use `unittest.mock` for Python implementations
+- Create fixture files for NiFi API responses
+- Mock database connections with in-memory alternatives
+- Use dependency injection for testability
+
+### Legacy Testing Guidelines
+
 1. Test NiFi API client with mock responses
 2. Create test flows in development NiFi instance
 3. Implement flow validation before deployment
